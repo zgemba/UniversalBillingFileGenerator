@@ -8,6 +8,8 @@ using System.Data.SqlClient;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
+using System.Net.Mail;
+using System.Net;
 
 namespace UniversalBillingFileGenerator
 {
@@ -18,6 +20,7 @@ namespace UniversalBillingFileGenerator
             int months = int.Parse(ConfigurationManager.AppSettings["Months"]);
             string frmt = ConfigurationManager.AppSettings["Format"];
             string table = ConfigurationManager.AppSettings["TableName"];
+            string filename = "billing";
 
             DateTime now = DateTime.UtcNow;
             DateTime start = now.AddMonths(-months);
@@ -27,7 +30,7 @@ namespace UniversalBillingFileGenerator
                                          start.ToString(CultureInfo.InvariantCulture), 
                                          now.ToString(CultureInfo.InvariantCulture));
 
-            using (StreamWriter sw = new StreamWriter("billing.psv"))
+            using (StreamWriter sw = new StreamWriter(filename + ".psv"))
             {
                 string cs = ConfigurationManager.ConnectionStrings["BillingData"].ConnectionString;
                 using (SqlConnection conn = new SqlConnection(cs))
@@ -116,6 +119,35 @@ namespace UniversalBillingFileGenerator
                     }
                 }
             }
+
+            // zip
+            if (File.Exists(filename+".zip"))
+                File.Delete(filename + ".zip");
+
+            using (ZipArchive zip = ZipFile.Open(filename + ".zip", ZipArchiveMode.Create))
+            {
+                zip.CreateEntryFromFile(filename + ".psv", filename + ".psv", CompressionLevel.Optimal);
+                if (frmt == "EMA")
+                    zip.CreateEntryFromFile("devices.csv", "devices.csv", CompressionLevel.Optimal);
+            }
+
+            // mail
+            MailMessage mail = new MailMessage();
+            mail.Subject = "TDS billing file from " + start.Date + " to " + now.Date;
+            mail.From = new MailAddress(ConfigurationManager.AppSettings["FromEmail"]);
+            string toEmail = ConfigurationManager.AppSettings["ToEmail"];
+            foreach (string rec in toEmail.Split(new char[] { ',', ';', ':' }))
+                mail.To.Add(rec);
+            SmtpClient client = new SmtpClient(
+                ConfigurationManager.AppSettings["SmtpServer"],
+                int.Parse(ConfigurationManager.AppSettings["SmtpPort"]));
+            client.Credentials = new NetworkCredential(
+                ConfigurationManager.AppSettings["SmtpUsername"],
+                ConfigurationManager.AppSettings["SmtpPassword"]);
+            FileStream stream = new FileStream(filename + ".zip", FileMode.Open);
+            Attachment attach = new Attachment(stream, filename + ".zip");
+            mail.Attachments.Add(attach);
+            client.Send(mail);              
         }
     }
 }
