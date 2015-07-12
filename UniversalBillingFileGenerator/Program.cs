@@ -1,15 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Configuration;
 using System.Data.SqlClient;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
-using System.Net.Mail;
 using System.Net;
+using System.Net.Mail;
 
 namespace UniversalBillingFileGenerator
 {
@@ -133,7 +129,7 @@ namespace UniversalBillingFileGenerator
 
             // mail
             MailMessage mail = new MailMessage();
-            mail.Subject = "TDS billing file from " + start.Date + " to " + now.Date;
+            mail.Subject = "TDS billing file from " + start.Date + " to " + now.Date + " @ " + Environment.MachineName;
             mail.From = new MailAddress(ConfigurationManager.AppSettings["FromEmail"]);
             string toEmail = ConfigurationManager.AppSettings["ToEmail"];
             foreach (string rec in toEmail.Split(new char[] { ',', ';', ':' }))
