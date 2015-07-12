@@ -68,9 +68,9 @@ namespace UniversalBillingFileGenerator
                                 sw.Write('|');
                                 sw.Write(rdr["Channel"]);
                                 sw.Write('|');
-                                if (rdr["DeviceDestinationID"] != null) sw.Write((int)rdr["DeviceDestinationID"]);
+                                sw.Write(rdr["DeviceDestinationID"].ToString());
                                 sw.Write('|');
-                                if (rdr["GeozoneAddressID"] != null) sw.Write((long)rdr["GeozoneAddressID"]);
+                                sw.Write(rdr["GeozoneAddressID"].ToString());
                                 sw.Write('|');
                                 sw.Write(rdr["IMEI"]);
                                 sw.Write('|');
@@ -78,10 +78,12 @@ namespace UniversalBillingFileGenerator
                                 sw.Write('|');
                                 sw.Write(rdr["AuthorityName"]);
                                 sw.Write('|');
-                                if ((string)rdr["MessageName"] == "ascii") sw.Write(false);
-                                else if (rdr["IsPollResponse"] != null) sw.Write(rdr["IsPollResponse"]);
+                                if ((string)rdr["MessageName"] == "ascii") 
+                                    sw.Write(false);
+                                else if (rdr["IsPollResponse"] != null) 
+                                    sw.Write(rdr["IsPollResponse"]);
                                 sw.Write('|');
-                                if (rdr["GpsTime"] != null) sw.Write(rdr["GpsTime"]);
+                                sw.Write(rdr["GpsTime"].ToString());
                                 sw.WriteLine();
                                 break;
                             default: break;
