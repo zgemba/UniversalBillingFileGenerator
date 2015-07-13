@@ -19,12 +19,13 @@ namespace UniversalBillingFileGenerator
             string filename = "billing";
 
             DateTime now = DateTime.UtcNow;
-            DateTime start = now.AddMonths(-months);
+            DateTime end = new DateTime(now.Year, now.Month, now.Day);
+            DateTime start = end.AddMonths(-months);
 
             string query = string.Format("SELECT * FROM {0} WHERE TransmissionTime BETWEEN '{1}' AND '{2}' ORDER BY BillableItemId",
                                          table, 
                                          start.ToString(CultureInfo.InvariantCulture), 
-                                         now.ToString(CultureInfo.InvariantCulture));
+                                         end.ToString(CultureInfo.InvariantCulture));
 
             using (StreamWriter sw = new StreamWriter(filename + ".psv"))
             {
