@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Net;
 using System.Net.Mail;
+using CommandLine;
 
 namespace UniversalBillingFileGenerator
 {
@@ -18,6 +19,25 @@ namespace UniversalBillingFileGenerator
             string table = ConfigurationManager.AppSettings["TableName"];
             string filename = "billing";
 
+            // preverimo če imamo CLI parametre
+            var options = new Options();
+            if (CommandLine.Parser.Default.ParseArguments(args, options))
+            {
+                if (options.Months != 0)
+                    months = options.Months;
+
+                if (options.Format != null)
+                    frmt = options.Format;
+
+                if (options.Table != null)
+                    table = options.Table;
+            }
+            else
+            {
+                Console.WriteLine("Error parsing command line parameters");
+                Environment.Exit(1); // error exit code
+            }
+
             DateTime now = DateTime.UtcNow;
             DateTime end = new DateTime(now.Year, now.Month, now.Day);
             DateTime start = end.AddMonths(-months);
@@ -27,6 +47,8 @@ namespace UniversalBillingFileGenerator
                                          start.ToString(CultureInfo.InvariantCulture), 
                                          end.ToString(CultureInfo.InvariantCulture));
 
+            Console.WriteLine("Generating PSV, format: " + frmt);
+            int count = 0;
             using (StreamWriter sw = new StreamWriter(filename + ".psv"))
             {
                 string cs = ConfigurationManager.ConnectionStrings["BillingData"].ConnectionString;
@@ -38,6 +60,7 @@ namespace UniversalBillingFileGenerator
                     SqlDataReader rdr = cmd.ExecuteReader();
                     while (rdr.Read())
                     {
+                        count++;
                         switch (frmt)
                         {
                             case "EMA":
@@ -93,8 +116,11 @@ namespace UniversalBillingFileGenerator
                 }
             }
 
+            Console.WriteLine("Done, " + count + " records written.");
             if (frmt == "EMA")          // potrebujem še devices.csv
             {
+                count = 0;
+                Console.WriteLine("Generating devices.csv");
                 using (StreamWriter sw = new StreamWriter("devices.csv"))
                 {
                     string cs = ConfigurationManager.ConnectionStrings["TDS"].ConnectionString;
@@ -112,12 +138,17 @@ namespace UniversalBillingFileGenerator
 
                         while (rdr.Read())
                         {
+                            count++;
                             sw.WriteLine(String.Format("{0},{1},{2}",
                                         int.Parse((string)rdr[0]), rdr[1], rdr[2]));
                         }
                     }
                 }
+                Console.WriteLine("Done, " + count + " records written.");
             }
+
+            if (options.NoMail)
+                Environment.Exit(0);
 
             // zip
             if (File.Exists(filename+".zip"))
@@ -132,7 +163,7 @@ namespace UniversalBillingFileGenerator
 
             // mail
             MailMessage mail = new MailMessage();
-            mail.Subject = "TDS billing file from " + start.Date + " to " + now.Date + " @ " + Environment.MachineName;
+            mail.Subject = "TDS billing file from " + start.Date + " to " + end.Date + " @ " + Environment.MachineName;
             mail.From = new MailAddress(ConfigurationManager.AppSettings["FromEmail"]);
             string toEmail = ConfigurationManager.AppSettings["ToEmail"];
             foreach (string rec in toEmail.Split(new char[] { ',', ';', ':' }))
