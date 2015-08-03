@@ -40,6 +40,14 @@ namespace UniversalBillingFileGenerator
 
             DateTime now = DateTime.UtcNow;
             DateTime end = new DateTime(now.Year, now.Month, now.Day);
+            if (!String.IsNullOrEmpty(options.End))
+            {
+                if (!DateTime.TryParseExact(options.End, "MM/dd/yyyy", System.Globalization.CultureInfo.InvariantCulture, DateTimeStyles.None, out end))
+                {
+                    Console.WriteLine("Invalid date format 'MM/dd/yyyy' required.");
+                    Environment.Exit(1);
+                }
+            }
             DateTime start = end.AddMonths(-months);
 
             string query = string.Format("SELECT * FROM {0} WHERE TransmissionTime BETWEEN '{1}' AND '{2}' ORDER BY BillableItemId",

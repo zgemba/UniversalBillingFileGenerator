@@ -20,5 +20,8 @@ namespace UniversalBillingFileGenerator
 
         [Option("nomail", Required = false, DefaultValue=false, HelpText = "Data table (BillableItem|BillableItemEMA)")]
         public bool NoMail { get; set; }
+
+        [Option("end", Required = false, HelpText = "Ending date 'MM/dd/yyyy'")]     
+        public string End { get; set; }   // raje parsam ročno zaradi lokalnega formata datuma
     }
 }
